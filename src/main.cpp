@@ -23,14 +23,6 @@ String responseHTML = ""
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-/*
-void newDisplayMessage(char text[]){
-  display.clearDisplay();
-  display.println(text);
-  display.display();
-}
-*/
-
 void webServerSetup() {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/html", responseHTML);
@@ -49,7 +41,7 @@ void webServerSetup() {
   });
 
 
-  	//Required
+  //Required
 	server.on("/connecttest.txt",[](AsyncWebServerRequest *request){request->redirect("http://logout.net");}); //windows 11 captive portal workaround
 	server.on("/wpad.dat",[](AsyncWebServerRequest *request){request->send(404);}); //Honestly don't understand what this is but a 404 stops win 10 keep calling this repeatedly and panicking the esp32 :)
 
@@ -100,15 +92,10 @@ void setup()
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.softAP("Totally not an honeypot");
-
   dnsServer.start(DNS_PORT, "*", apIP);
-
   webServerSetup();  
-
   delay(100);
-
   displaySetup();
-
 }
 
 void loop() {
