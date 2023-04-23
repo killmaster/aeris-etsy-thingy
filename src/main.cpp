@@ -2,17 +2,19 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
-#include <WiFi.h>
 #include <DNSServer.h>
 #include <stdio.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32// OLED display height, in pixels
 
 const byte DNS_PORT = 53;
+const String localIPURL = "http://192.168.1.1";
 IPAddress apIP(192,168,1,1);
 DNSServer dnsServer;
-WiFiServer server(80);
+AsyncWebServer server(80);
 
 String responseHTML = ""
   "<!DOCTYPE html><html><head><title>HoneyPot's Captive Portal</title></head><body>"
@@ -29,21 +31,49 @@ void newDisplayMessage(char text[]){
 }
 */
 
-void setup()
-{
-  Serial.begin(115200);
+void webServerSetup() {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", responseHTML);
+    Serial.println("requested \"/\"");
+  });
 
-  WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-  WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP("Totally not an honeypot");
+  server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", responseHTML);
+    Serial.println("requested \"/generate_204\"");
+  });
 
-  dnsServer.start(DNS_PORT, "*", apIP);
+  server.onNotFound([](AsyncWebServerRequest *request){
+    request->redirect("/");
+    Serial.println("server.notfound triggered");
+    Serial.println(request->url());
+  });
+
+
+  	//Required
+	server.on("/connecttest.txt",[](AsyncWebServerRequest *request){request->redirect("http://logout.net");}); //windows 11 captive portal workaround
+	server.on("/wpad.dat",[](AsyncWebServerRequest *request){request->send(404);}); //Honestly don't understand what this is but a 404 stops win 10 keep calling this repeatedly and panicking the esp32 :)
+
+	//Background responses: Probably not all are Required, but some are. Others might speed things up?
+	//A Tier (commonly used by modern systems)
+	server.on("/generate_204",[](AsyncWebServerRequest *request){request->redirect(localIPURL);}); // android captive portal redirect
+	server.on("/redirect",[](AsyncWebServerRequest *request){request->redirect(localIPURL);}); //microsoft redirect
+	server.on("/hotspot-detect.html",[](AsyncWebServerRequest *request){request->redirect(localIPURL);}); //apple call home
+	server.on("/canonical.html",[](AsyncWebServerRequest *request){request->redirect(localIPURL);}); //firefox captive portal call home
+	server.on("/success.txt",[](AsyncWebServerRequest *request){request->send(200);}); //firefox captive portal call home
+	server.on("/ncsi.txt",[](AsyncWebServerRequest *request){request->redirect(localIPURL);}); //windows call home
+
+	//B Tier (uncommon)
+	// server.on("/chrome-variations/seed",[](AsyncWebServerRequest *request){request->send(200);}); //chrome captive portal call home
+	// server.on("/service/update2/json",[](AsyncWebServerRequest *request){request->send(200);}); //firefox?
+	// server.on("/chat",[](AsyncWebServerRequest *request){request->send(404);}); //No stop asking Whatsapp, there is no internet connection
+	// server.on("/startpage",[](AsyncWebServerRequest *request){request->redirect(localIPURL);});
+
 
   server.begin();
-  delay(100);
+  Serial.println("Web server started");
+}
 
+void displaySetup() {
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
   { // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
@@ -60,6 +90,27 @@ void setup()
   delay(2000);
 }
 
+
+void setup()
+{
+  Serial.begin(115200);
+
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAP("Totally not an honeypot");
+
+  dnsServer.start(DNS_PORT, "*", apIP);
+
+  webServerSetup();  
+
+  delay(100);
+
+  displaySetup();
+
+}
+
 void loop() {
   Serial.println(WiFi.softAPgetStationNum());
 
@@ -73,29 +124,4 @@ void loop() {
   display.display();
 
   dnsServer.processNextRequest();
-  WiFiClient client = server.available();
-
-  if (client) {
-    String currentLine = "";
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        if (c == '\n') {
-          if (currentLine.length() == 0) {
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("");
-            client.println(responseHTML);
-            break;
-          } else {
-            currentLine = "";
-          }
-        } else if (c != '\r') {
-          currentLine += c;
-        }
-      }
-    }
-    client.stop();
-  }
-
 }
