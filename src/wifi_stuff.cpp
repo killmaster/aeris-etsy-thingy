@@ -3,7 +3,40 @@
 IPAddress apIP(192,168,1,1);
 AsyncWebServer server(80);
 
+String currentSSID, currentPassword;
+
+void changeToStationAndConnect(String ssid, String password){
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  const int ssid_len = ssid.length();
+  char* new_ssid = new char[ssid_len + 1];
+  strcpy(new_ssid, ssid.c_str());
+
+  const int password_len = password.length();
+  char* new_password = new char[password_len + 1];
+  strcpy(new_password, password.c_str());
+
+  WiFi.begin(ssid.c_str(), password.c_str());
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+    showMessage("Connection to " + ssid);
+  }
+  showMessage("Connected to: " + ssid + "\nIP: " + WiFi.localIP());
+  Serial.println(WiFi.localIP().toString());
+}
+
+void saveWifiSettings(AsyncWebServerRequest *request){
+  String ssid = String(request->arg("ssid"));
+  String password = String(request->arg("password"));
+  Serial.println("SSID: " + ssid + "\tPassword: " + password);
+  request->send(200);
+  changeToStationAndConnect(ssid, password);
+}
+
 void webServerSetup(String responseHTML) {
+  // POST
+  server.on("/", HTTP_POST, saveWifiSettings);
+
   server.on("/", HTTP_GET, [responseHTML](AsyncWebServerRequest *request){
     request->send(200, "text/html", responseHTML);
     Serial.println("requested \"/\"");
@@ -45,10 +78,11 @@ void webServerSetup(String responseHTML) {
   Serial.println("Web server started");
 }
 
-void setupWiFiStationMode(String &responseHTML){
+void setupWiFiStationMode(String& responseHTML){
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
+  showMessage("Scanning for networks...");
 
   int n = WiFi.scanNetworks();
   String* ssids = new String[MAX_SSIDS];
@@ -65,10 +99,12 @@ void setupWiFiStationMode(String &responseHTML){
 }
 
 void setupWiFiAPMode(DNSServer &dnsServer){
+  showMessage("Starting AP mode.");
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.softAP(AP_NAME);
   dnsServer.start(DNS_PORT, "*", apIP);
+  showMessage("AP mode on.");
 }
