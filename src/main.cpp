@@ -74,6 +74,7 @@ void displaySetup() {
   }
   delay(2000);
   display.clearDisplay();
+  display.dim(0x47);
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 10);
