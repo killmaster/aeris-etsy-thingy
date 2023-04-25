@@ -21,7 +21,7 @@ void changeToStationAndConnect(String ssid, String password){
     delay(500);
     showMessage("Connection to " + ssid);
   }
-  showMessage("Connected to: " + ssid + "\nIP: " + WiFi.localIP());
+  showMessage("Connected to: " + ssid + "\nIP: " + WiFi.localIP().toString());
   Serial.println(WiFi.localIP().toString());
 }
 
