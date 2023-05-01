@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "wifi_stuff.h"
 #include "oled.h"
-#include "etsy.h"
 
 
 DNSServer dnsServer;
@@ -27,8 +26,9 @@ void setup()
 {
   Serial.begin(115200);
   setupDisplay();
-  setupWiFiStationMode(responseHTML);
-  setupWiFiAPMode(dnsServer);
+  // setupWiFiStationMode(responseHTML);
+  // setupWiFiAPMode(dnsServer);
+  setupWiFiAPStationMode(dnsServer, responseHTML);
   webServerSetup(responseHTML);
   delay(100);
 }

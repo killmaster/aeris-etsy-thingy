@@ -15,5 +15,6 @@ const int MAX_SSIDS = 30;
 void webServerSetup(String responseHTML); 
 void setupWiFiStationMode(String &responseHTML);
 void setupWiFiAPMode(DNSServer &dnsServer);
+void setupWiFiAPStationMode(DNSServer &dnsServer, String& responseHTML);
 
 #endif

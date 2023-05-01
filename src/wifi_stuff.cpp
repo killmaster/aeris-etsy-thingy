@@ -6,8 +6,8 @@ AsyncWebServer server(80);
 String currentSSID, currentPassword;
 
 void changeToStationAndConnect(String ssid, String password){
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
+  //WiFi.mode(WIFI_STA);
+  //WiFi.disconnect();
   const int ssid_len = ssid.length();
   char* new_ssid = new char[ssid_len + 1];
   strcpy(new_ssid, ssid.c_str());
@@ -107,4 +107,33 @@ void setupWiFiAPMode(DNSServer &dnsServer){
   WiFi.softAP(AP_NAME);
   dnsServer.start(DNS_PORT, "*", apIP);
   showMessage("AP mode on.");
+}
+
+void setupWiFiAPStationMode(DNSServer &dnsServer, String& responseHTML){
+  WiFi.disconnect();
+  WiFi.mode(WIFI_AP_STA);
+
+  showMessage("[WiFi] Scanning for networks...");
+
+  int n = WiFi.scanNetworks();
+  String* ssids = new String[MAX_SSIDS];
+  int stop = min(n, MAX_SSIDS);
+  for (int i = 0; i < stop; i++){
+    ssids[i] = WiFi.SSID(i);
+  }
+
+  String ssid_list = "";
+  for (int i = 0; i < stop; i++){
+    ssid_list += "<li>" + ssids[i] + "</li>";
+  }
+  responseHTML.replace("$ssid_list", ssid_list);
+
+  Serial.println("[WiFi] Starting WiFi in AP + Station mode.");
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAP(AP_NAME);
+  dnsServer.start(DNS_PORT, "*", apIP);
+  Serial.printf("[WiFi] AP started with name %s and IP %s.\n", AP_NAME, apIP.toString());
+  char displayMessage[128];
+  snprintf(displayMessage, 128, "WiFi started on %s with IP %s", AP_NAME, apIP.toString());
+  showMessage(displayMessage);
 }
