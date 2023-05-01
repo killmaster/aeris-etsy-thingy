@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "wifi_stuff.h"
 #include "oled.h"
+#include "etsy.h"
 
 
 DNSServer dnsServer;
