@@ -6,6 +6,7 @@
 
 
 DNSServer dnsServer;
+bool captivePortal = true;
 
 String responseHTML = ""
   "<!DOCTYPE html><html><head><title>HoneyPot's Captive Portal</title></head><body>"
@@ -34,5 +35,9 @@ void setup()
 }
 
 void loop() {
-  dnsServer.processNextRequest();
+  if (captivePortal)
+    dnsServer.processNextRequest();
+  if (WiFi.status() != WL_CONNECTED) {
+    setupWiFiAPStationMode(dnsServer, responseHTML);
+  }
 }

@@ -19,9 +19,11 @@ void changeToStationAndConnect(String ssid, String password){
   WiFi.begin(ssid.c_str(), password.c_str());
   while (WiFi.status() != WL_CONNECTED){
     delay(500);
-    showMessage("Connection to " + ssid);
+    showMessage("Connecting to " + ssid);
   }
   showMessage("Connected to: " + ssid + "\nIP: " + WiFi.localIP().toString());
+  captivePortal = false;
+
   Serial.println(WiFi.localIP().toString());
 }
 

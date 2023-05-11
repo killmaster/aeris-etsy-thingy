@@ -11,6 +11,7 @@
 const byte DNS_PORT = 53;
 const String localIPURL = "http://192.168.1.1";
 const int MAX_SSIDS = 30;
+extern bool captivePortal;
 
 void webServerSetup(String responseHTML); 
 void setupWiFiStationMode(String &responseHTML);
